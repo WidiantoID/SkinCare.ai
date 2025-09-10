@@ -1,6 +1,6 @@
 # 🧴 SkinCare.ai
 
-An intelligent iOS skincare analysis and recommendation app powered by AI, offering personalized skincare routines through advanced computer vision and machine learning capabilities.
+An intelligent iOS skincare analysis and recommendation app powered by AI, offering personalized skincare routines through advanced computer vision and machine learning capabilities, with 250+ ingredients indexed.
 
 ![Swift](https://img.shields.io/badge/Swift-5.9-orange.svg)
 ![Platform](https://img.shields.io/badge/Platform-iOS%2017.0+-blue.svg)
