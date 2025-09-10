@@ -8,7 +8,8 @@ An intelligent iOS skincare analysis and recommendation app powered by AI, offer
 ![SwiftUI](https://img.shields.io/badge/SwiftUI-4.0-purple.svg)
 ![Maintenance](https://img.shields.io/badge/Maintenance-Active-brightgreen.svg)
 
-![SkinCare AI Banner](https://github.com/user-attachments/assets/skincare-ai-banner.png)
+<img width="1920" height="1080" alt="SkinCare ai Presentation" src="https://github.com/user-attachments/assets/9d5e75c8-d210-4c12-876e-abe901582490" />
+
 
 ## 📖 Table of Contents
 - [Core Features](#-core-features)
