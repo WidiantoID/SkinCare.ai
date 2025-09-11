@@ -64,7 +64,7 @@ An intelligent iOS skincare analysis and recommendation app powered by AI, offer
 
 ### 🧪 Comprehensive Ingredients Database
 - **Extensive Catalog**
-  - 2,000+ skincare ingredients
+  - 250+ skincare ingredients
   - Scientific descriptions
   - Compatibility matrix
   - Evidence-based ratings
