@@ -3,6 +3,11 @@ import Foundation
 /// Configuration for secure API keys and secrets
 /// - Important: Never commit actual API keys to version control
 /// - Use environment variables or Xcode configuration for secure key storage
+///
+/// INSTRUCTIONS:
+/// 1. Copy this file to Secrets.swift in the same directory
+/// 2. Add your actual API key to the Secrets.swift file
+/// 3. Secrets.swift is gitignored and will not be committed
 enum Secrets {
     /// Gemini API key for AI-powered skin analysis
     /// - Returns: API key from environment variable or nil if not configured
@@ -18,11 +23,11 @@ enum Secrets {
             return configKey
         }
 
+        // OPTION 3: Hardcode your API key here (NOT RECOMMENDED for production)
+        // Uncomment and replace with your actual key:
+        // return "YOUR_GEMINI_API_KEY_HERE"
+
         // No API key configured - app will fall back to MockAnalyzer
-        // To configure:
-        // 1. Set GEMINI_API_KEY environment variable, or
-        // 2. Add GEMINI_API_KEY to Info.plist (not recommended for production), or
-        // 3. Use Xcode build configuration
         return nil
     }()
 
@@ -31,5 +36,3 @@ enum Secrets {
         geminiApiKey != nil && !(geminiApiKey?.isEmpty ?? true)
     }
 }
-
-

@@ -1,5 +1,31 @@
 import Foundation
 
+/// Errors that can occur during Gemini API interactions
+enum GeminiAnalyzerError: LocalizedError {
+    case missingAPIKey
+    case invalidResponse
+    case apiError(statusCode: Int, message: String?)
+    case parsingError
+    case networkError(Error)
+
+    var errorDescription: String? {
+        switch self {
+        case .missingAPIKey:
+            return "Gemini API key is missing. Please configure your API key."
+        case .invalidResponse:
+            return "Received invalid response from Gemini API."
+        case .apiError(let code, let message):
+            return message ?? "Gemini API error with status code: \(code)"
+        case .parsingError:
+            return "Failed to parse Gemini API response."
+        case .networkError(let error):
+            return "Network error: \(error.localizedDescription)"
+        }
+    }
+}
+
+/// Gemini API-based skin analyzer using Google's Generative AI
+/// - Note: Requires a valid Gemini API key configured in Secrets
 public final class GeminiAnalyzer: MLAnalyzing {
     private let apiKey: String
     private let session: URLSession
@@ -9,9 +35,13 @@ public final class GeminiAnalyzer: MLAnalyzing {
         self.session = session
     }
 
+    /// Analyzes skin from image data using Gemini AI
+    /// - Parameter imageData: JPEG image data of the face
+    /// - Returns: ScanResult containing skin analysis and recommendations
+    /// - Throws: GeminiAnalyzerError if analysis fails
     public func analyzeSkin(from imageData: Data) async throws -> ScanResult {
         guard !apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            throw NSError(domain: "GeminiAnalyzer", code: -2, userInfo: [NSLocalizedDescriptionKey: "Missing Gemini API key"])
+            throw GeminiAnalyzerError.missingAPIKey
         }
         
         // Get user data on main actor
@@ -78,12 +108,12 @@ public final class GeminiAnalyzer: MLAnalyzing {
 
         let (data, response) = try await session.data(for: req)
         guard let http = response as? HTTPURLResponse else {
-            throw NSError(domain: "GeminiAnalyzer", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid response"])
+            throw GeminiAnalyzerError.invalidResponse
         }
         guard (200..<300).contains(http.statusCode) else {
             let apiMessage = (try? JSONSerialization.jsonObject(with: data) as? [String: Any])?["error"] as? [String: Any]
             let message = apiMessage?["message"] as? String
-            throw NSError(domain: "GeminiAnalyzer", code: http.statusCode, userInfo: [NSLocalizedDescriptionKey: message ?? "Gemini API error: \(http.statusCode)"])
+            throw GeminiAnalyzerError.apiError(statusCode: http.statusCode, message: message)
         }
 
         // Parse model output; expect JSON in text. Fallback to mock if parsing fails.
@@ -103,6 +133,9 @@ public final class GeminiAnalyzer: MLAnalyzing {
         )
     }
 
+    /// Parses the AI response text to extract analysis results
+    /// - Parameter text: Raw text response from Gemini API
+    /// - Returns: Tuple containing scores, analysis text, and recommended ingredients
     private static func parseAnalysisResult(from text: String) -> (scores: [ConditionScore], skinAnalysis: String?, recommendedIngredients: [String]) {
         // Try to find JSON object in the text
         guard let start = text.firstIndex(of: "{"), let end = text.lastIndex(of: "}") else {
