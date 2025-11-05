@@ -1,6 +1,7 @@
 import Foundation
 import CoreGraphics
 
+/// Represents a detected skin condition with confidence score
 public struct ConditionScore: Codable, Equatable, Identifiable {
     public let id: UUID
     public let condition: SkinCondition
@@ -20,6 +21,8 @@ public struct ConditionScore: Codable, Equatable, Identifiable {
     }
 }
 
+/// Result of a skin analysis scan
+/// Contains detected conditions, analysis text, and ingredient recommendations
 public struct ScanResult: Codable, Equatable, Identifiable {
     public let id: UUID
     public let capturedAt: Date

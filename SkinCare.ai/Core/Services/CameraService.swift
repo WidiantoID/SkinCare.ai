@@ -2,12 +2,43 @@ import AVFoundation
 import UIKit
 import SwiftUI
 
+/// Errors that can occur during camera operations
+enum CameraServiceError: LocalizedError {
+    case notAuthorized
+    case captureSessionSetupFailed
+    case noCaptureDevice
+    case noPhotoData
+
+    var errorDescription: String? {
+        switch self {
+        case .notAuthorized:
+            return "Camera access not authorized. Please enable camera access in Settings."
+        case .captureSessionSetupFailed:
+            return "Failed to setup camera capture session."
+        case .noCaptureDevice:
+            return "No camera device available on this device."
+        case .noPhotoData:
+            return "Failed to capture photo data."
+        }
+    }
+}
+
+/// Service for managing camera capture functionality
+/// Handles camera permissions, session configuration, and photo capture
 final class CameraService: NSObject, ObservableObject {
+    /// The capture session for managing camera input/output
     let session = AVCaptureSession()
+
+    /// Queue for camera session operations
     private let sessionQueue = DispatchQueue(label: "camera.session.queue")
+
+    /// Output for capturing photos
     private let photoOutput = AVCapturePhotoOutput()
+
+    /// Whether camera access has been authorized
     @Published var isAuthorized: Bool = false
 
+    /// Requests camera access permission from the user
     func requestAccess() async {
         switch AVCaptureDevice.authorizationStatus(for: .video) {
         case .authorized:
@@ -22,6 +53,8 @@ final class CameraService: NSObject, ObservableObject {
         }
     }
 
+    /// Configures the camera capture session with appropriate settings
+    /// - Note: This method should be called after camera access is authorized
     func configure() {
         guard isAuthorized else { return }
         sessionQueue.async { [weak self] in
@@ -48,13 +81,16 @@ final class CameraService: NSObject, ObservableObject {
         }
     }
 
+    /// Captures a photo from the current camera session
+    /// - Returns: JPEG image data of the captured photo
+    /// - Throws: CameraServiceError if capture fails
     func capturePhoto() async throws -> Data {
         try await withCheckedThrowingContinuation { (c: CheckedContinuation<Data, Error>) in
             let settings = AVCapturePhotoSettings(format: [AVVideoCodecKey: AVVideoCodecType.jpeg])
             photoOutput.capturePhoto(with: settings, delegate: PhotoDelegate { data, error in
                 if let error { c.resume(throwing: error); return }
                 guard let data else {
-                    c.resume(throwing: NSError(domain: "CameraService", code: -1, userInfo: [NSLocalizedDescriptionKey: "No photo data"]))
+                    c.resume(throwing: CameraServiceError.noPhotoData)
                     return
                 }
                 c.resume(returning: data)
