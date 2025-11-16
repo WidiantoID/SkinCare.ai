@@ -1,17 +1,28 @@
 import SwiftUI
 
+/// Displays user's favorite ingredients
+/// Supports search and quick access to ingredient details
 struct FavoriteIngredientsView: View {
+    // MARK: - State Objects
+
     @StateObject private var favoritesManager = FavoritesManager.shared
+
+    // MARK: - State
+
     @State private var searchText = ""
-    
+
+    // MARK: - Constants
+
     private let allIngredients = IngredientCatalog.sample
-    
+
+    // MARK: - Computed Properties
+
     private var favoriteIngredients: [Ingredient] {
         allIngredients.filter { ingredient in
             favoritesManager.isFavorite(ingredientName: ingredient.name)
         }
     }
-    
+
     private var filteredIngredients: [Ingredient] {
         if searchText.isEmpty {
             return favoriteIngredients
@@ -22,11 +33,13 @@ struct FavoriteIngredientsView: View {
             }
         }
     }
-    
+
+    // MARK: - Body
+
     var body: some View {
         VStack(spacing: 0) {
             if favoriteIngredients.isEmpty {
-                emptyStateView
+                EmptyStateView.noFavorites
             } else {
                 List {
                     ForEach(filteredIngredients) { ingredient in
@@ -40,37 +53,26 @@ struct FavoriteIngredientsView: View {
         }
         .navigationTitle("Favorite Ingredients")
         .navigationBarTitleDisplayMode(.large)
-    }
-    
-    private var emptyStateView: some View {
-        VStack(spacing: 20) {
-            Spacer()
-            
-            Image(systemName: "heart.slash")
-                .font(.system(size: 64))
-                .foregroundStyle(.gray.opacity(0.5))
-            
-            VStack(spacing: 8) {
-                Text("No Favorites Yet")
-                    .font(.title2.weight(.semibold))
-                    .foregroundStyle(.primary)
-                
-                Text("Tap the heart icon on ingredients you love to add them to your favorites.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 40)
-            }
-            
-            Spacer()
+        .onAppear {
+            AppLogger.info("FavoriteIngredientsView appeared with \(favoriteIngredients.count) favorites", category: .ui)
         }
     }
 }
 
+// MARK: - Ingredient Row
+
+/// Row component for displaying an ingredient in a list
 struct IngredientRow: View {
+    // MARK: - Properties
+
     let ingredient: Ingredient
+
+    // MARK: - State Objects
+
     @StateObject private var favoritesManager = FavoritesManager.shared
-    
+
+    // MARK: - Body
+
     var body: some View {
         HStack(spacing: 12) {
             // Ingredient Icon
@@ -96,8 +98,14 @@ struct IngredientRow: View {
             }
             
             Spacer()
-            
+
             Button {
+                let wasFavorite = favoritesManager.isFavorite(ingredientName: ingredient.name)
+                if wasFavorite {
+                    HapticManager.light()
+                } else {
+                    HapticManager.success()
+                }
                 favoritesManager.toggleFavorite(ingredientName: ingredient.name)
             } label: {
                 Image(systemName: favoritesManager.isFavorite(ingredientName: ingredient.name) ? "heart.fill" : "heart")
@@ -108,6 +116,8 @@ struct IngredientRow: View {
         .padding(.vertical, 4)
     }
 }
+
+// MARK: - Previews
 
 #Preview {
     NavigationStack {

@@ -1,13 +1,27 @@
 import SwiftUI
 
+/// Detailed view for a single ingredient
+/// Shows description, benefits, concerns it helps with, and cautions
 struct IngredientDetailView: View {
+    // MARK: - Properties
+
     let ingredient: Ingredient
+
+    // MARK: - State Objects
+
     @StateObject private var favoritesManager = FavoritesManager.shared
+
+    // MARK: - State
+
     @State private var showingFavoriteAnimation = false
-    
+
+    // MARK: - Computed Properties
+
     private var isFavorite: Bool {
         favoritesManager.isFavorite(ingredientName: ingredient.name)
     }
+
+    // MARK: - Body
 
     var body: some View {
         ScrollView {
@@ -32,14 +46,7 @@ struct IngredientDetailView: View {
                         
                         // Favorite Button
                         Button {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                                favoritesManager.toggleFavorite(ingredientName: ingredient.name)
-                                showingFavoriteAnimation = true
-                            }
-                            
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                                showingFavoriteAnimation = false
-                            }
+                            toggleFavorite()
                         } label: {
                             HStack(spacing: 8) {
                                 Image(systemName: isFavorite ? "heart.fill" : "heart")
@@ -161,14 +168,7 @@ struct IngredientDetailView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                        favoritesManager.toggleFavorite(ingredientName: ingredient.name)
-                        showingFavoriteAnimation = true
-                    }
-                    
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        showingFavoriteAnimation = false
-                    }
+                    toggleFavorite()
                 } label: {
                     Image(systemName: isFavorite ? "heart.fill" : "heart")
                         .font(.system(size: 18, weight: .semibold))
@@ -177,22 +177,58 @@ struct IngredientDetailView: View {
                 }
             }
         }
+        .onAppear {
+            AppLogger.info("IngredientDetailView appeared for: \(ingredient.name)", category: .ui)
+        }
+    }
+
+    // MARK: - Helper Methods
+
+    /// Toggles favorite status with haptic feedback and animation
+    private func toggleFavorite() {
+        let wasFavorite = isFavorite
+
+        if wasFavorite {
+            HapticManager.light()
+            AppLogger.debug("Removed \(ingredient.name) from favorites", category: .ui)
+        } else {
+            HapticManager.success()
+            AppLogger.debug("Added \(ingredient.name) to favorites", category: .ui)
+        }
+
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+            favoritesManager.toggleFavorite(ingredientName: ingredient.name)
+            showingFavoriteAnimation = true
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            showingFavoriteAnimation = false
+        }
     }
 }
 
+// MARK: - Ingredient Info Card
+
+/// Reusable card component for displaying ingredient information sections
 struct IngredientInfoCard<Content: View>: View {
+    // MARK: - Properties
+
     let title: String
     let icon: String
     let color: Color
     let content: Content
-    
+
+    // MARK: - Initialization
+
     init(title: String, icon: String, color: Color, @ViewBuilder content: () -> Content) {
         self.title = title
         self.icon = icon
         self.color = color
         self.content = content()
     }
-    
+
+    // MARK: - Body
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
@@ -222,8 +258,8 @@ struct IngredientInfoCard<Content: View>: View {
     }
 }
 
+// MARK: - Previews
+
 #Preview {
     NavigationStack { IngredientDetailView(ingredient: IngredientCatalog.sample.first!) }
 }
-
-

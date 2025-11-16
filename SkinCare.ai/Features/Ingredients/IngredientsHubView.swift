@@ -1,7 +1,14 @@
 import SwiftUI
 
+/// Main hub for exploring skincare ingredients
+/// Provides personalized recommendations, browsing by concern, and trending ingredients
 struct IngredientsHubView: View {
+    // MARK: - Environment Objects
+
     @EnvironmentObject var scanStore: ScanStore
+
+    // MARK: - State
+
     @State private var selectedCategory: String? = nil
     @State private var showingSearch = false
     @State private var showingFavorites = false
@@ -9,9 +16,13 @@ struct IngredientsHubView: View {
     @State private var showingConcernIngredients = false
     @State private var selectedConcern: SkinCondition?
     @State private var animateCards = false
-    
+
+    // MARK: - Constants
+
     private let concerns = SkinCondition.allCases
     private let allIngredients = IngredientCatalog.all
+
+    // MARK: - Body
 
     var body: some View {
         ScrollView {
@@ -39,6 +50,7 @@ struct IngredientsHubView: View {
         .background(Theme.Gradients.appBackground.ignoresSafeArea())
         .navigationTitle("Ingredients")
         .onAppear {
+            AppLogger.info("IngredientsHubView appeared", category: .ui)
             withAnimation(.easeOut(duration: 0.8).delay(0.2)) {
                 animateCards = true
             }
@@ -79,8 +91,12 @@ struct IngredientsHubView: View {
                     .foregroundStyle(.secondary)
                 
                 Spacer()
-                
-                Button(action: { showingSearch = true }) {
+
+                Button(action: {
+                    HapticManager.light()
+                    AppLogger.debug("Search button tapped", category: .ui)
+                    showingSearch = true
+                }) {
                     Image(systemName: "magnifyingglass")
                         .font(.title2)
                         .foregroundStyle(.mint)
@@ -111,10 +127,12 @@ struct IngredientsHubView: View {
                         count: allIngredients.count,
                         isSelected: selectedCategory == "all"
                     ) {
+                        HapticManager.light()
+                        AppLogger.debug("Viewing all ingredients (\(allIngredients.count))", category: .ui)
                         selectedCategory = "all"
                         showingSearch = true
                     }
-                    
+
                     CategoryActionChip(
                         title: "Favorites",
                         icon: "heart.fill",
@@ -122,10 +140,12 @@ struct IngredientsHubView: View {
                         count: FavoritesManager.shared.favoriteIngredients.count,
                         isSelected: selectedCategory == "favorites"
                     ) {
+                        HapticManager.light()
+                        AppLogger.debug("Viewing favorite ingredients", category: .ui)
                         selectedCategory = "favorites"
                         showingFavorites = true
                     }
-                    
+
                     CategoryActionChip(
                         title: "Recent",
                         icon: "clock.fill",
@@ -133,6 +153,8 @@ struct IngredientsHubView: View {
                         count: 5,
                         isSelected: selectedCategory == "recent"
                     ) {
+                        HapticManager.light()
+                        AppLogger.debug("Viewing recent ingredients", category: .ui)
                         selectedCategory = "recent"
                         showingRecent = true
                     }
@@ -199,6 +221,8 @@ struct IngredientsHubView: View {
                         icon: icon(for: concern),
                         color: colorForConcern(concern)
                     ) {
+                        HapticManager.light()
+                        AppLogger.debug("Viewing ingredients for concern: \(concern.rawValue)", category: .ui)
                         selectedConcern = concern
                         showingConcernIngredients = true
                     }
@@ -299,8 +323,8 @@ struct IngredientsHubView: View {
     }
 }
 
+// MARK: - Previews
+
 #Preview {
     NavigationStack { IngredientsHubView() }
 }
-
-
