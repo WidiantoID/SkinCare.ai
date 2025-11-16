@@ -95,14 +95,16 @@ struct ScoreDataPoint: Identifiable {
     let score: Double
 }
 
-struct ProgressGoal: Identifiable {
+/// Represents a user's skincare goal with progress tracking
+struct ProgressGoal: Identifiable, Codable {
     let id: UUID
     let title: String
     let description: String
     let progress: Double // 0.0 to 1.0
     let targetDate: Date
     let isCompleted: Bool
-    
+
+    /// Color representation based on progress level
     var progressColor: Color {
         if isCompleted {
             return .green
@@ -113,6 +115,10 @@ struct ProgressGoal: Identifiable {
         } else {
             return .red
         }
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, title, description, progress, targetDate, isCompleted
     }
 }
 
