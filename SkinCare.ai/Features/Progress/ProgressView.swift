@@ -1,16 +1,30 @@
 import SwiftUI
 
+/// Main progress dashboard showing user's skin health journey
+/// Displays scans, trends, goals, and AI insights
 struct ProgressDashboardView: View {
+    // MARK: - State
+
     @State private var animateCards = false
-    @StateObject private var progressStore = ProgressStore()
-    @EnvironmentObject var scanStore: ScanStore
     @State private var showingAIRecommendations = false
     @State private var scrollTarget: String?
-    
+
+    // MARK: - State Objects
+
+    @StateObject private var progressStore = ProgressStore()
+
+    // MARK: - Environment Objects
+
+    @EnvironmentObject var scanStore: ScanStore
+
+    // MARK: - Computed Properties
+
     private var progressData: ProgressData {
         progressStore.generateProgressData(from: scanStore)
     }
-    
+
+    // MARK: - Body
+
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
@@ -50,6 +64,7 @@ struct ProgressDashboardView: View {
             AIRecommendationsView(scanStore: scanStore)
         }
         .onAppear {
+            AppLogger.info("ProgressDashboardView appeared", category: .ui)
             withAnimation(.easeOut(duration: 0.8).delay(0.2)) {
                 animateCards = true
             }
@@ -68,8 +83,8 @@ struct ProgressDashboardView: View {
                 
                 // AI Recommendations Button
                 Button {
-                    let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-                    impactFeedback.impactOccurred()
+                    HapticManager.light()
+                    AppLogger.debug("Showing AI recommendations", category: .ui)
                     showingAIRecommendations = true
                 } label: {
                     HStack(spacing: 8) {
@@ -105,8 +120,7 @@ struct ProgressDashboardView: View {
                 GridItem(.flexible(), spacing: 12)
             ], spacing: 12) {
                 Button {
-                    let h = UIImpactFeedbackGenerator(style: .light)
-                    h.impactOccurred()
+                    HapticManager.light()
                     scrollTarget = "recent"
                 } label: {
                     ProgressMetricCard(
@@ -117,10 +131,9 @@ struct ProgressDashboardView: View {
                         icon: "camera.viewfinder"
                     )
                 }
-                
+
                 Button {
-                    let h = UIImpactFeedbackGenerator(style: .light)
-                    h.impactOccurred()
+                    HapticManager.light()
                     scrollTarget = "trends"
                 } label: {
                     ProgressMetricCard(
@@ -131,10 +144,9 @@ struct ProgressDashboardView: View {
                         icon: "chart.line.uptrend.xyaxis"
                     )
                 }
-                
+
                 Button {
-                    let h = UIImpactFeedbackGenerator(style: .light)
-                    h.impactOccurred()
+                    HapticManager.light()
                     scrollTarget = "goals"
                 } label: {
                     ProgressMetricCard(
@@ -145,10 +157,9 @@ struct ProgressDashboardView: View {
                         icon: "target"
                     )
                 }
-                
+
                 Button {
-                    let h = UIImpactFeedbackGenerator(style: .light)
-                    h.impactOccurred()
+                    HapticManager.light()
                     scrollTarget = "recent"
                 } label: {
                     ProgressMetricCard(
@@ -236,8 +247,8 @@ struct ProgressDashboardView: View {
     }
 }
 
+// MARK: - Previews
+
 #Preview {
     NavigationStack { ProgressDashboardView() }
 }
-
-
