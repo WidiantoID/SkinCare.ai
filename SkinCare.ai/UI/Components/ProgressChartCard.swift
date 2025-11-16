@@ -1,8 +1,16 @@
 import SwiftUI
 
+// MARK: - Progress Chart Card
+
+/// Animated chart card displaying skin health score trends over the last 7 days
+/// Features animated bar chart with gradient fills and improvement percentage
 struct ProgressChartCard: View {
+    // MARK: - State
+
     @State private var animateChart = false
-    
+
+    // MARK: - Body
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
@@ -63,6 +71,8 @@ struct ProgressChartCard: View {
         }
     }
 }
+
+// MARK: - Previews
 
 #Preview {
     ProgressChartCard()

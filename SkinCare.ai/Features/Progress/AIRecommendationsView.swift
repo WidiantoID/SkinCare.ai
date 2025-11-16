@@ -1,26 +1,40 @@
 import SwiftUI
 
+// MARK: - AI Recommendations View
+
+/// Displays personalized AI-powered recommendations based on scan history
+/// Shows ingredient suggestions, routine guidance, and progress insights
 struct AIRecommendationsView: View {
+    // MARK: - Properties
+
     let scanStore: ScanStore
+
+    // MARK: - Environment
+
     @Environment(\.dismiss) private var dismiss
+
+    // MARK: - State
+
     @State private var animateCards = false
-    
+
+    // MARK: - Body
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 24) {
                     // Header
                     headerSection
-                    
+
                     // Personalized Recommendations
                     recommendationsSection
-                    
+
                     // Ingredient Insights
                     ingredientsSection
-                    
+
                     // Routine Suggestions
                     routineSection
-                    
+
                     // Progress Insights
                     insightsSection
                 }
@@ -32,6 +46,8 @@ struct AIRecommendationsView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Done") {
+                        HapticManager.light()
+                        AppLogger.debug("Dismissing AI recommendations view", category: .ui)
                         dismiss()
                     }
                     .font(.subheadline.weight(.medium))
@@ -40,6 +56,7 @@ struct AIRecommendationsView: View {
             }
         }
         .onAppear {
+            AppLogger.info("AI Recommendations view appeared", category: .ui)
             withAnimation(.easeOut(duration: 0.8).delay(0.2)) {
                 animateCards = true
             }
@@ -210,8 +227,11 @@ struct AIRecommendationsView: View {
     }
 }
 
-// MARK: - Supporting Views
+// MARK: - Supporting Components
 
+// MARK: - Recommendation Card
+
+/// Card displaying a single recommendation with priority level
 struct RecommendationCard: View {
     let title: String
     let description: String
@@ -275,6 +295,9 @@ struct RecommendationCard: View {
     }
 }
 
+// MARK: - Ingredient Recommendation Card
+
+/// Compact card showing ingredient name, benefit, and confidence score
 struct IngredientRecommendationCard: View {
     let name: String
     let benefit: String
@@ -323,6 +346,9 @@ struct IngredientRecommendationCard: View {
     }
 }
 
+// MARK: - Routine Step Card
+
+/// Card displaying skincare routine steps for morning or evening
 struct RoutineStepCard: View {
     let timeOfDay: String
     let steps: [String]
@@ -373,6 +399,9 @@ struct RoutineStepCard: View {
     }
 }
 
+// MARK: - Insight Card
+
+/// Card displaying a progress insight with icon and description
 struct InsightCard: View {
     let icon: String
     let title: String
@@ -410,6 +439,8 @@ struct InsightCard: View {
         )
     }
 }
+
+// MARK: - Previews
 
 #Preview {
     AIRecommendationsView(scanStore: ScanStore())

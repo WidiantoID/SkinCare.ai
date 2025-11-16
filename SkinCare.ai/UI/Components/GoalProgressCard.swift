@@ -1,14 +1,24 @@
 import SwiftUI
 
+// MARK: - Goal Progress Card
+
+/// Animated card displaying goal progress with a progress bar
+/// Features smooth progress animation and interactive press feedback
 struct GoalProgressCard: View {
+    // MARK: - Properties
+
     let title: String
     let progress: Double
     let target: String
     let color: Color
-    
+
+    // MARK: - State
+
     @State private var animateProgress = false
     @State private var isPressed = false
-    
+
+    // MARK: - Body
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -72,6 +82,8 @@ struct GoalProgressCard: View {
         }
     }
 }
+
+// MARK: - Previews
 
 #Preview {
     VStack(spacing: 12) {

@@ -1,12 +1,22 @@
 import SwiftUI
 
+// MARK: - Recent Scan Row
+
+/// Row displaying a recent scan with date, score, and primary concern
+/// Features color-coded score display and interactive press feedback
 struct RecentScanRow: View {
+    // MARK: - Properties
+
     let date: Date
     let score: Int
     let primaryConcern: String
-    
+
+    // MARK: - State
+
     @State private var isPressed = false
-    
+
+    // MARK: - Computed Properties
+
     private var scoreColor: Color {
         switch score {
         case 80...100: return .green
@@ -14,7 +24,9 @@ struct RecentScanRow: View {
         default: return .red
         }
     }
-    
+
+    // MARK: - Body
+
     var body: some View {
         HStack(spacing: 16) {
             // Date circle
@@ -75,6 +87,8 @@ struct RecentScanRow: View {
     }
 }
 
+// MARK: - Date Formatter Extensions
+
 extension DateFormatter {
     static let dayFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -88,6 +102,8 @@ extension DateFormatter {
         return formatter
     }()
 }
+
+// MARK: - Previews
 
 #Preview {
     VStack(spacing: 12) {

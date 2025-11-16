@@ -1,10 +1,20 @@
 import SwiftUI
 
+// MARK: - Trending Ingredient Card
+
+/// Compact card displaying trending ingredient information
+/// Shows name, description, concern tags, and ingredient count
 struct TrendingIngredientCard: View {
+    // MARK: - Properties
+
     let ingredient: Ingredient
-    
+
+    // MARK: - State
+
     @State private var isPressed = false
-    
+
+    // MARK: - Body
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -80,7 +90,9 @@ struct TrendingIngredientCard: View {
             }
         }
     }
-    
+
+    // MARK: - Helper Methods
+
     private func formatConditionName(_ rawValue: String) -> String {
         return rawValue.replacingOccurrences(of: "([a-z])([A-Z])", with: "$1 $2", options: .regularExpression)
             .capitalized
@@ -104,6 +116,8 @@ struct TrendingIngredientCard: View {
         }
     }
 }
+
+// MARK: - Previews
 
 #Preview {
     ScrollView(.horizontal) {

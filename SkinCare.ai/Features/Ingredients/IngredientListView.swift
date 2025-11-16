@@ -1,12 +1,21 @@
 import SwiftUI
 
-/// Displays a searchable list of ingredients
+// MARK: - Ingredient List View
+
+/// Displays a searchable list of ingredients with favorites support
+/// Supports full-text search across name, description, and benefits
 struct IngredientListView: View {
     // MARK: - Properties
 
     let title: String
     let ingredients: [Ingredient]
+
+    // MARK: - State
+
     @State private var query: String = ""
+
+    // MARK: - State Objects
+
     @StateObject private var favoritesManager = FavoritesManager.shared
 
     // MARK: - Computed Properties
@@ -45,6 +54,14 @@ struct IngredientListView: View {
         )
         .navigationTitle(title)
         .navigationBarTitleDisplayMode(.large)
+        .onChange(of: query) { _, newValue in
+            if !newValue.isEmpty {
+                AppLogger.debug("Searching ingredients: '\(newValue)'", category: .ui)
+            }
+        }
+        .onAppear {
+            AppLogger.info("IngredientListView appeared: \(title)", category: .ui)
+        }
     }
 
     // MARK: - Subviews
@@ -89,12 +106,19 @@ struct IngredientListView: View {
     }
 }
 
-// MARK: - Ingredient Row Component
+// MARK: - Supporting Components
 
-/// Individual ingredient row display
+// MARK: - Ingredient Row
+
+/// Individual ingredient row showing name, description, favorite status, and benefits preview
 struct IngredientRow: View {
+    // MARK: - Properties
+
+
     let ingredient: Ingredient
     let isFavorite: Bool
+
+    // MARK: - Body
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -146,8 +170,12 @@ struct IngredientRow: View {
     }
 }
 
+// MARK: - Previews
+
 #Preview {
-    NavigationStack { IngredientListView(title: "All Ingredients", ingredients: IngredientCatalog.sample) }
+    NavigationStack {
+        IngredientListView(title: "All Ingredients", ingredients: IngredientCatalog.sample)
+    }
 }
 
 

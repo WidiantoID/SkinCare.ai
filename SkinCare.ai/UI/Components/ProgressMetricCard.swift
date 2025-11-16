@@ -1,14 +1,24 @@
 import SwiftUI
 
+// MARK: - Progress Metric Card
+
+/// Compact card displaying a progress metric with icon, value, and change indicator
+/// Features interactive press animation and gradient icon styling
 struct ProgressMetricCard: View {
+    // MARK: - Properties
+
     let title: String
     let value: String
     let change: String
     let color: Color
     let icon: String
-    
+
+    // MARK: - State
+
     @State private var isPressed = false
-    
+
+    // MARK: - Body
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -59,6 +69,8 @@ struct ProgressMetricCard: View {
         }
     }
 }
+
+// MARK: - Previews
 
 #Preview {
     LazyVGrid(columns: [

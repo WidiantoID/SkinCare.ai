@@ -1,14 +1,24 @@
 import SwiftUI
 
+// MARK: - Modern Concern Card
+
+/// Interactive card displaying a skin concern with ingredient count and icon
+/// Features color-coded design and tap action support
 struct ModernConcernCard: View {
+    // MARK: - Properties
+
     let title: String
     let count: Int
     let icon: String
     let color: Color
     let action: (() -> Void)?
-    
+
+    // MARK: - State
+
     @State private var isPressed = false
-    
+
+    // MARK: - Initialization
+
     init(title: String, count: Int, icon: String, color: Color, action: (() -> Void)? = nil) {
         self.title = title
         self.count = count
@@ -16,7 +26,9 @@ struct ModernConcernCard: View {
         self.color = color
         self.action = action
     }
-    
+
+    // MARK: - Body
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -75,6 +87,8 @@ struct ModernConcernCard: View {
         }
     }
 }
+
+// MARK: - Previews
 
 #Preview {
     LazyVGrid(columns: [

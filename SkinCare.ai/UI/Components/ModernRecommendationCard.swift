@@ -1,13 +1,23 @@
 import SwiftUI
 
+// MARK: - Modern Recommendation Card
+
+/// Large card displaying AI recommendations with ingredient previews
+/// Shows title, subtitle, and top ingredient chips
 struct ModernRecommendationCard: View {
+    // MARK: - Properties
+
     let title: String
     let subtitle: String
     let ingredientCount: Int
     let topIngredients: [String]
-    
+
+    // MARK: - State
+
     @State private var isPressed = false
-    
+
+    // MARK: - Body
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
@@ -77,6 +87,8 @@ struct ModernRecommendationCard: View {
         }
     }
 }
+
+// MARK: - Previews
 
 #Preview {
     ModernRecommendationCard(
