@@ -1,5 +1,7 @@
 import SwiftUI
 
+// MARK: - Date Formatter Extension
+
 extension DateFormatter {
     static let memberSince: DateFormatter = {
         let formatter = DateFormatter()
@@ -8,15 +10,29 @@ extension DateFormatter {
     }()
 }
 
+// MARK: - Profile View
+
+/// User profile view displaying personal information and statistics
+/// Shows scan history, goals, and profile management options
 struct ProfileView: View {
+    // MARK: - Properties
+
     @ObservedObject var session: SessionViewModel
+
+    // MARK: - State Objects
+
     @StateObject private var userData = UserData.shared
     @StateObject private var scanStore = ScanStore()
+
+    // MARK: - State
+
     @State private var isEditing = false
     @State private var showingSignOutAlert = false
     @State private var showingClearDataAlert = false
     @State private var animateCards = false
-    
+
+    // MARK: - Body
+
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
@@ -45,8 +61,8 @@ struct ProfileView: View {
                             HStack {
                                 Spacer()
                                 Button {
-                                    let impactFeedback = UIImpactFeedbackGenerator(style: .light)
-                                    impactFeedback.impactOccurred()
+                                    HapticManager.light()
+                                    AppLogger.debug("Opening profile edit", category: .ui)
                                     isEditing = true
                                 } label: {
                                     Image(systemName: "pencil")
@@ -110,6 +126,7 @@ struct ProfileView: View {
                             Spacer()
 
                             Button("Add Goals") {
+                                HapticManager.light()
                                 isEditing = true
                             }
                             .font(.caption.weight(.medium))
@@ -178,8 +195,8 @@ struct ProfileView: View {
                     // Clear Data Button
                     if scanStore.totalScans > 0 {
                         Button {
-                            let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-                            impactFeedback.impactOccurred()
+                            HapticManager.warning()
+                            AppLogger.info("Clear scan history requested", category: .ui)
                             showingClearDataAlert = true
                         } label: {
                             HStack {
@@ -199,8 +216,8 @@ struct ProfileView: View {
 
                     // Sign Out Button
                     Button {
-                        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-                        impactFeedback.impactOccurred()
+                        HapticManager.warning()
+                        AppLogger.info("Sign out requested", category: .auth)
                         showingSignOutAlert = true
                     } label: {
                         HStack {
@@ -230,26 +247,33 @@ struct ProfileView: View {
             EditProfileView()
         }
         .alert("Sign Out", isPresented: $showingSignOutAlert) {
-            Button("Cancel", role: .cancel) { }
+            Button("Cancel", role: .cancel) {
+                AppLogger.debug("Sign out cancelled", category: .auth)
+            }
             Button("Sign Out", role: .destructive) {
                 Task {
+                    AppLogger.info("User signing out", category: .auth)
                     await session.signOut()
+                    HapticManager.success()
                 }
             }
         } message: {
             Text("Are you sure you want to sign out?")
         }
         .alert("Clear Scan History", isPresented: $showingClearDataAlert) {
-            Button("Cancel", role: .cancel) { }
+            Button("Cancel", role: .cancel) {
+                AppLogger.debug("Clear history cancelled", category: .ui)
+            }
             Button("Clear", role: .destructive) {
+                AppLogger.info("Clearing scan history", category: .scan)
                 scanStore.clearHistory()
-                let successFeedback = UINotificationFeedbackGenerator()
-                successFeedback.notificationOccurred(.success)
+                HapticManager.success()
             }
         } message: {
             Text("This will permanently delete all your scan history. This action cannot be undone.")
         }
         .onAppear {
+            AppLogger.info("ProfileView appeared", category: .ui)
             withAnimation(.easeOut(duration: 0.8).delay(0.1)) {
                 animateCards = true
             }
@@ -257,19 +281,28 @@ struct ProfileView: View {
     }
 }
 
+// MARK: - Profile Info Card
+
+/// Reusable card component for profile sections
 struct ProfileInfoCard<Content: View>: View {
+    // MARK: - Properties
+
     let title: String
     let icon: String
     let color: Color
     let content: Content
-    
+
+    // MARK: - Initialization
+
     init(title: String, icon: String, color: Color, @ViewBuilder content: () -> Content) {
         self.title = title
         self.icon = icon
         self.color = color
         self.content = content()
     }
-    
+
+    // MARK: - Body
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
@@ -299,11 +332,18 @@ struct ProfileInfoCard<Content: View>: View {
     }
 }
 
+// MARK: - Profile Info Row
+
+/// Row component for displaying profile information
 struct ProfileInfoRow: View {
+    // MARK: - Properties
+
     let label: String
     let value: String
     let icon: String
-    
+
+    // MARK: - Body
+
     var body: some View {
         HStack {
             Image(systemName: icon)
@@ -321,14 +361,23 @@ struct ProfileInfoRow: View {
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(.secondary)
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(label): \(value)")
     }
 }
 
+// MARK: - Statistic Item
+
+/// Card displaying a single statistic with icon and value
 struct StatisticItem: View {
+    // MARK: - Properties
+
     let title: String
     let value: String
     let color: Color
-    
+
+    // MARK: - Body
+
     var body: some View {
         VStack(spacing: 8) {
             Text(value)
@@ -345,8 +394,13 @@ struct StatisticItem: View {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(color.opacity(0.1))
         )
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title): \(value)")
     }
 }
+
+// MARK: - Preview
+
 #Preview {
     NavigationStack { ProfileView(session: SessionViewModel(auth: MockAuthService())) }
 }

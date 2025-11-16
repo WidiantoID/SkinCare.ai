@@ -1,23 +1,42 @@
 import SwiftUI
 
+// MARK: - Onboarding View
+
+/// Welcome screen with feature showcase and user onboarding
+/// Collects user name and age for personalization
 struct OnboardingView: View {
+    // MARK: - Onboarding Steps
+
+    enum OnboardingStep {
+        case name, age
+    }
+
+    // MARK: - Properties
+
     @ObservedObject var session: SessionViewModel
+
+    // MARK: - State Objects
+
     @StateObject private var userData = UserData.shared
+
+    // MARK: - State
+
     @State private var userName = ""
     @State private var userAge = ""
     @State private var showUserInput = false
     @State private var currentStep: OnboardingStep = .name
     @State private var isAnimating = false
-    
-    enum OnboardingStep {
-        case name, age
-    }
-    
+
+    // MARK: - Helper Methods
+
+    /// Validates age is within acceptable range (13-100)
     private func isValidAge(_ ageString: String) -> Bool {
         guard let age = Int(ageString) else { return false }
         return age >= 13 && age <= 100
     }
-    
+
+    // MARK: - Body
+
     var body: some View {
         VStack(spacing: 32) {
             Spacer()
@@ -158,6 +177,8 @@ struct OnboardingView: View {
                     if currentStep == .name {
                         Button(action: {
                             if !userName.isEmpty {
+                                HapticManager.light()
+                                AppLogger.debug("User entered name: \(userName)", category: .auth)
                                 withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
                                     currentStep = .age
                                 }
@@ -183,6 +204,8 @@ struct OnboardingView: View {
                     } else {
                         Button(action: {
                             if !userAge.isEmpty && isValidAge(userAge) {
+                                HapticManager.success()
+                                AppLogger.info("User completed onboarding: name=\(userName), age=\(userAge)", category: .auth)
                                 userData.updateUserInfo(name: userName, age: userAge)
                                 Task {
                                     await session.signIn(with: .email)
@@ -209,6 +232,8 @@ struct OnboardingView: View {
                     }
                 } else {
                     Button(action: {
+                        HapticManager.light()
+                        AppLogger.debug("Starting onboarding flow", category: .auth)
                         withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
                             showUserInput = true
                         }
@@ -232,6 +257,8 @@ struct OnboardingView: View {
                 
                 if showUserInput {
                     Button(currentStep == .name ? "Back" : "Previous") {
+                        HapticManager.light()
+                        AppLogger.debug("User navigating back in onboarding", category: .auth)
                         withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
                             if currentStep == .age {
                                 currentStep = .name
@@ -259,15 +286,25 @@ struct OnboardingView: View {
                 .padding(.bottom)
         }
         .navigationBarHidden(true)
+        .onAppear {
+            AppLogger.info("OnboardingView appeared", category: .auth)
+        }
     }
 }
 
+// MARK: - Feature Row
+
+/// Row component displaying a single app feature with icon and description
 struct FeatureRow: View {
+    // MARK: - Properties
+
     let icon: String
     let color: Color
     let title: String
     let description: String
-    
+
+    // MARK: - Body
+
     var body: some View {
         HStack(alignment: .top, spacing: 16) {
             Image(systemName: icon)
@@ -287,13 +324,15 @@ struct FeatureRow: View {
             
             Spacer()
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title): \(description)")
     }
 }
+
+// MARK: - Preview
 
 #Preview {
     NavigationStack {
         OnboardingView(session: SessionViewModel(auth: MockAuthService()))
     }
 }
-
-
