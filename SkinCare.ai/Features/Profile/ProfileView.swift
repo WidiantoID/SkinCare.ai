@@ -11,10 +11,10 @@ extension DateFormatter {
 struct ProfileView: View {
     @ObservedObject var session: SessionViewModel
     @StateObject private var userData = UserData.shared
+    @StateObject private var scanStore = ScanStore()
     @State private var isEditing = false
-    @State private var skinType = "Combination"
-    @State private var goals = ["Reduce acne", "Even skin tone", "Anti-aging"]
     @State private var showingSignOutAlert = false
+    @State private var showingClearDataAlert = false
     @State private var animateCards = false
     
     var body: some View {
@@ -65,8 +65,8 @@ struct ProfileView: View {
                         Text(userData.name.isEmpty ? "Welcome!" : userData.name)
                             .font(.title.weight(.bold))
                             .foregroundStyle(.primary)
-                        
-                        Text("Member since \(DateFormatter.memberSince.string(from: Date()))")
+
+                        Text("Member since \(userData.memberSinceFormatted)")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
@@ -84,7 +84,7 @@ struct ProfileView: View {
                 ) {
                     VStack(spacing: 16) {
                         ProfileInfoRow(label: "Age", value: userData.age.isEmpty ? "Not set" : userData.age, icon: "calendar")
-                        ProfileInfoRow(label: "Skin Type", value: skinType, icon: "drop.fill")
+                        ProfileInfoRow(label: "Skin Type", value: userData.skinType.isEmpty ? "Not set" : userData.skinType, icon: "drop.fill")
                     }
                 }
                 .opacity(animateCards ? 1.0 : 0.0)
@@ -97,18 +97,38 @@ struct ProfileView: View {
                     icon: "target",
                     color: .green
                 ) {
-                    VStack(spacing: 12) {
-                        ForEach(goals, id: \.self) { goal in
-                            HStack {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundStyle(.green)
-                                    .font(.system(size: 16))
-                                
-                                Text(goal)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.primary)
-                                
-                                Spacer()
+                    if userData.goals.isEmpty {
+                        HStack {
+                            Image(systemName: "target")
+                                .foregroundStyle(.secondary)
+                                .font(.system(size: 16))
+
+                            Text("No goals set yet")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+
+                            Spacer()
+
+                            Button("Add Goals") {
+                                isEditing = true
+                            }
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(.green)
+                        }
+                    } else {
+                        VStack(spacing: 12) {
+                            ForEach(userData.goals, id: \.self) { goal in
+                                HStack {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundStyle(.green)
+                                        .font(.system(size: 16))
+
+                                    Text(goal)
+                                        .font(.subheadline)
+                                        .foregroundStyle(.primary)
+
+                                    Spacer()
+                                }
                             }
                         }
                     }
@@ -127,34 +147,75 @@ struct ProfileView: View {
                         GridItem(.flexible()),
                         GridItem(.flexible())
                     ], spacing: 16) {
-                        StatisticItem(title: "Scans", value: "12", color: .pink)
-                        StatisticItem(title: "Avg Score", value: "78%", color: .green)
-                        StatisticItem(title: "Streak", value: "7 days", color: .orange)
-                        StatisticItem(title: "Goals", value: "\(goals.count)", color: .blue)
+                        StatisticItem(
+                            title: "Scans",
+                            value: "\(scanStore.totalScans)",
+                            color: .pink
+                        )
+                        StatisticItem(
+                            title: "Avg Score",
+                            value: scanStore.totalScans > 0 ? String(format: "%.0f%%", scanStore.averageScore) : "N/A",
+                            color: .green
+                        )
+                        StatisticItem(
+                            title: "Streak",
+                            value: "\(scanStore.currentStreak) days",
+                            color: .orange
+                        )
+                        StatisticItem(
+                            title: "Goals",
+                            value: "\(userData.goals.count)",
+                            color: .blue
+                        )
                     }
                 }
                 .opacity(animateCards ? 1.0 : 0.0)
                 .offset(y: animateCards ? 0 : 50)
                 .animation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.5), value: animateCards)
                 
-                // Sign Out Button
-                Button {
-                    let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-                    impactFeedback.impactOccurred()
-                    showingSignOutAlert = true
-                } label: {
-                    HStack {
-                        Image(systemName: "rectangle.portrait.and.arrow.right")
-                            .font(.system(size: 16, weight: .semibold))
-                        
-                        Text("Sign Out")
-                            .font(.headline.weight(.semibold))
+                // Action Buttons
+                VStack(spacing: 12) {
+                    // Clear Data Button
+                    if scanStore.totalScans > 0 {
+                        Button {
+                            let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                            impactFeedback.impactOccurred()
+                            showingClearDataAlert = true
+                        } label: {
+                            HStack {
+                                Image(systemName: "trash")
+                                    .font(.system(size: 16, weight: .semibold))
+
+                                Text("Clear Scan History")
+                                    .font(.headline.weight(.semibold))
+                            }
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 56)
+                            .background(.orange.gradient, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            .shadow(color: .orange.opacity(0.3), radius: 8, x: 0, y: 4)
+                        }
                     }
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 56)
-                    .background(.red.gradient, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .shadow(color: .red.opacity(0.3), radius: 8, x: 0, y: 4)
+
+                    // Sign Out Button
+                    Button {
+                        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                        impactFeedback.impactOccurred()
+                        showingSignOutAlert = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "rectangle.portrait.and.arrow.right")
+                                .font(.system(size: 16, weight: .semibold))
+
+                            Text("Sign Out")
+                                .font(.headline.weight(.semibold))
+                        }
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(.red.gradient, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .shadow(color: .red.opacity(0.3), radius: 8, x: 0, y: 4)
+                    }
                 }
                 .padding(.top, 8)
                 .opacity(animateCards ? 1.0 : 0.0)
@@ -166,12 +227,7 @@ struct ProfileView: View {
         }
         .navigationTitle("Profile")
         .sheet(isPresented: $isEditing) {
-            EditProfileView(
-                displayName: $userData.name,
-                age: $userData.age,
-                skinType: $skinType,
-                goals: $goals
-            )
+            EditProfileView()
         }
         .alert("Sign Out", isPresented: $showingSignOutAlert) {
             Button("Cancel", role: .cancel) { }
@@ -182,6 +238,16 @@ struct ProfileView: View {
             }
         } message: {
             Text("Are you sure you want to sign out?")
+        }
+        .alert("Clear Scan History", isPresented: $showingClearDataAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Clear", role: .destructive) {
+                scanStore.clearHistory()
+                let successFeedback = UINotificationFeedbackGenerator()
+                successFeedback.notificationOccurred(.success)
+            }
+        } message: {
+            Text("This will permanently delete all your scan history. This action cannot be undone.")
         }
         .onAppear {
             withAnimation(.easeOut(duration: 0.8).delay(0.1)) {

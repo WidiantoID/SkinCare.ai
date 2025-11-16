@@ -1,15 +1,18 @@
 import SwiftUI
 
 struct EditProfileView: View {
-    @Binding var displayName: String
-    @Binding var age: String
-    @Binding var skinType: String
-    @Binding var goals: [String]
-    
+    @StateObject private var userData = UserData.shared
     @Environment(\.dismiss) private var dismiss
+
+    @State private var displayName: String = ""
+    @State private var age: String = ""
+    @State private var skinType: String = ""
+    @State private var goals: [String] = []
     @State private var newGoal = ""
     @State private var showingAddGoal = false
-    
+    @State private var showingValidationAlert = false
+    @State private var validationMessage = ""
+
     private let skinTypes = ["Normal", "Dry", "Oily", "Combination", "Sensitive"]
     
     var body: some View {
@@ -43,8 +46,8 @@ struct EditProfileView: View {
                     // Personal Information Card
                     EditCard(title: "Personal Information", icon: "person.circle.fill", color: .blue) {
                         VStack(spacing: 20) {
-                            EditField(label: "Display Name", text: $displayName, icon: "person")
-                            EditField(label: "Age", text: $age, icon: "calendar")
+                            EditField(label: "Display Name", text: $displayName, icon: "person", placeholder: "Enter your name")
+                            EditField(label: "Age", text: $age, icon: "calendar", placeholder: "Enter your age", keyboardType: .numberPad)
                             
                             VStack(alignment: .leading, spacing: 8) {
                                 HStack {
@@ -141,15 +144,23 @@ struct EditProfileView: View {
                         dismiss()
                     }
                 }
-                
+
+
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") {
-                        dismiss()
+                        saveProfile()
                     }
                     .font(.headline.weight(.semibold))
                     .foregroundStyle(.pink)
                 }
             }
+        }
+        .onAppear {
+            // Load current user data
+            displayName = userData.name
+            age = userData.age
+            skinType = userData.skinType.isEmpty ? "Combination" : userData.skinType
+            goals = userData.goals.isEmpty ? [] : userData.goals
         }
         .alert("Add Goal", isPresented: $showingAddGoal) {
             TextField("Enter goal", text: $newGoal)
@@ -165,6 +176,44 @@ struct EditProfileView: View {
         } message: {
             Text("What skincare goal would you like to add?")
         }
+        .alert("Validation Error", isPresented: $showingValidationAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(validationMessage)
+        }
+    }
+
+    // MARK: - Helper Methods
+
+    private func saveProfile() {
+        // Validate inputs
+        if displayName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            validationMessage = "Please enter your name"
+            showingValidationAlert = true
+            return
+        }
+
+        if !age.isEmpty {
+            guard let ageInt = Int(age), ageInt >= 13 && ageInt <= 100 else {
+                validationMessage = "Please enter a valid age between 13 and 100"
+                showingValidationAlert = true
+                return
+            }
+        }
+
+        // Save the profile
+        userData.updateProfile(
+            name: displayName.trimmingCharacters(in: .whitespacesAndNewlines),
+            age: age,
+            skinType: skinType,
+            goals: goals
+        )
+
+        // Provide haptic feedback
+        let successFeedback = UINotificationFeedbackGenerator()
+        successFeedback.notificationOccurred(.success)
+
+        dismiss()
     }
 }
 
@@ -214,7 +263,9 @@ struct EditField: View {
     let label: String
     @Binding var text: String
     let icon: String
-    
+    var placeholder: String? = nil
+    var keyboardType: UIKeyboardType = .default
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
@@ -222,16 +273,17 @@ struct EditField: View {
                     .font(.system(size: 16))
                     .foregroundStyle(.blue)
                     .frame(width: 20)
-                
+
                 Text(label)
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(.primary)
-                
+
                 Spacer()
             }
-            
-            TextField(label, text: $text)
+
+            TextField(placeholder ?? label, text: $text)
                 .textFieldStyle(.plain)
+                .keyboardType(keyboardType)
                 .padding(12)
                 .background(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -242,10 +294,5 @@ struct EditField: View {
 }
 
 #Preview {
-    EditProfileView(
-        displayName: .constant("Sarah Johnson"),
-        age: .constant("28"),
-        skinType: .constant("Combination"),
-        goals: .constant(["Reduce acne", "Even skin tone", "Anti-aging"])
-    )
+    EditProfileView()
 }
