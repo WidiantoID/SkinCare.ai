@@ -1,20 +1,33 @@
 import SwiftUI
 
+/// Main view for capturing and analyzing skin photos
+/// Provides camera capture, photo selection, and analysis initiation
 struct ScanView: View {
+    // MARK: - State Objects
+
     @StateObject private var viewModel: ScanViewModel
+    @StateObject private var networkMonitor = NetworkMonitor.shared
+
+    // MARK: - State
+
     @State private var showingCamera = false
     @State private var showingImagePicker = false
     @State private var capturedImage: UIImage?
     @State private var isAnimating = false
+    @State private var showingNetworkAlert = false
+
+    // MARK: - Initialization
 
     init(viewModel: ScanViewModel) {
         _viewModel = StateObject(wrappedValue: viewModel)
     }
 
+    // MARK: - Body
+
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
-                // Header Section
+                // MARK: Header Section
                 VStack(spacing: 12) {
                     Image(systemName: "camera.viewfinder")
                         .font(.system(size: 32))
@@ -49,8 +62,11 @@ struct ScanView: View {
                                 .shadow(color: .pink.opacity(0.2), radius: 16, x: 0, y: 8)
                             
                             Button("Retake Photo") {
+                                HapticManager.light()
+                                AppLogger.debug("Retaking photo", category: .scan)
                                 withAnimation(.spring()) {
                                     capturedImage = nil
+                                    viewModel.clearResults()
                                 }
                             }
                             .font(.subheadline.weight(.medium))
@@ -134,12 +150,29 @@ struct ScanView: View {
                         style: .primary,
                         isLoading: viewModel.isAnalyzing
                     ) {
-                        let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
-                        impactFeedback.impactOccurred()
+                        // Check network connectivity before analysis
+                        guard networkMonitor.isConnected else {
+                            showingNetworkAlert = true
+                            HapticManager.warning()
+                            AppLogger.warning("Analysis attempted without network connection", category: .scan)
+                            return
+                        }
+
+                        HapticManager.medium()
+                        AppLogger.info("Starting skin analysis", category: .scan)
+
                         Task {
                             if let image = capturedImage,
                                let imageData = image.jpegData(compressionQuality: 0.8) {
                                 await viewModel.analyze(imageData: imageData)
+
+                                if viewModel.lastResult != nil {
+                                    HapticManager.scanComplete()
+                                    AppLogger.info("Skin analysis completed successfully", category: .scan)
+                                } else if viewModel.errorMessage != nil {
+                                    HapticManager.error()
+                                    AppLogger.error("Skin analysis failed", category: .scan)
+                                }
                             }
                         }
                     }
@@ -184,21 +217,14 @@ struct ScanView: View {
                 }
 
                 if let error = viewModel.errorMessage {
-                    HStack {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .foregroundStyle(.red)
-                        
-                        Text(error)
-                            .font(.subheadline)
-                            .foregroundStyle(.red)
+                    ErrorView(
+                        variant: .banner,
+                        title: "Analysis Failed",
+                        message: error,
+                        actionTitle: "Dismiss"
+                    ) {
+                        viewModel.clearResults()
                     }
-                    .padding(16)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .fill(.red.opacity(0.1))
-                    )
-                    .accessibilityLabel("Error")
-                    .accessibilityValue(error)
                 }
             }
             .padding()
@@ -211,12 +237,22 @@ struct ScanView: View {
         .sheet(isPresented: $showingImagePicker) {
             ImagePicker(selectedImage: $capturedImage, sourceType: .photoLibrary)
         }
+        .networkAlert(isPresented: $showingNetworkAlert)
         .onAppear {
             isAnimating = true
+            AppLogger.info("ScanView appeared", category: .ui)
+        }
+        .onChange(of: capturedImage) { newValue in
+            if newValue != nil {
+                AppLogger.debug("Image captured", category: .scan)
+            }
         }
     }
 }
 
+// MARK: - Tips Card
+
+/// Displays helpful tips for capturing the best skin scan photos
 struct TipsCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -252,10 +288,13 @@ struct TipsCard: View {
     }
 }
 
+// MARK: - Tip Row
+
+/// Individual tip row with icon and text
 struct TipRow: View {
     let icon: String
     let text: String
-    
+
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
@@ -266,24 +305,40 @@ struct TipRow: View {
             Text(text)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
-            
+
             Spacer()
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(text)
     }
 }
 
+// MARK: - Modern Action Button
+
+/// Reusable action button with primary and secondary styles
+/// Supports loading states and custom icons
 struct ModernActionButton: View {
+    // MARK: - Properties
+
     let title: String
     let icon: String?
     let color: Color
     let style: ButtonStyle
     let isLoading: Bool
     let action: () -> Void
-    
+
+    // MARK: - Button Style
+
     enum ButtonStyle {
         case primary, secondary
     }
-    
+
+    // MARK: - State
+
+    @State private var isPressed = false
+
+    // MARK: - Initialization
+
     init(title: String, icon: String? = nil, color: Color, style: ButtonStyle, isLoading: Bool = false, action: @escaping () -> Void) {
         self.title = title
         self.icon = icon
@@ -292,9 +347,9 @@ struct ModernActionButton: View {
         self.isLoading = isLoading
         self.action = action
     }
-    
-    @State private var isPressed = false
-    
+
+    // MARK: - Body
+
     var body: some View {
         Button(action: action) {
             HStack {
@@ -344,10 +399,10 @@ struct ModernActionButton: View {
     }
 }
 
+// MARK: - Previews
+
 #Preview {
     NavigationStack {
         ScanView(viewModel: ScanViewModel(analyzer: MockAnalyzer()))
     }
 }
-
-
